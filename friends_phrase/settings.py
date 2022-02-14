@@ -109,6 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Tokyo'
+AUTH_USER_MODEL = 'api.User'
 
 USE_I18N = True
 
