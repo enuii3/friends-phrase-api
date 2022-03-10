@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,  PermissionsMixin
 from django.conf import settings
+import uuid
 
 language_max_length = 3
 
@@ -24,6 +25,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     username = models.CharField(max_length=20)
     email = models.EmailField(max_length=100, unique=True)
     is_staff = models.BooleanField(default=False)
@@ -50,6 +52,7 @@ class Profile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     sex = models.CharField(max_length=7, choices=SEX_CHOICES)
     date_of_birth = models.CharField(max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -62,6 +65,7 @@ class Profile(models.Model):
 
 
 class Language(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     LANGUAGE_CHOICES = (
         ('en', 'English'),
         ('ja', 'Japanese'),
@@ -74,6 +78,7 @@ class Language(models.Model):
 
 
 class Phrase(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
@@ -102,6 +107,7 @@ class Phrase(models.Model):
 
 
 class Comment(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     text = models.CharField(max_length=1000)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
