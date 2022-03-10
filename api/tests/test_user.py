@@ -2,7 +2,7 @@ from django.test import TestCase
 from unittest import mock
 from datetime import datetime
 from .factories.user import TestUserFactory
-from api.models import User
+from django.contrib.auth import get_user_model
 
 
 class UserModelTest(TestCase):
@@ -27,21 +27,26 @@ class UserModelTest(TestCase):
         self.user.username = self.updated_username
         self.user.email = self.updated_email
         self.user.save()
+
         self.assertEqual(self.user.username, self.updated_username)
         self.assertEqual(self.user.email, self.updated_email)
 
     def test_updated_at_when_edit_username(self):
+        self.assertEqual(self.user.created_at, self.mock_date)
         self.assertEqual(self.user.updated_at, self.mock_date)
 
         self.user.username = self.updated_username
         self.user.save()
 
         self.assertEqual(self.user.username, self.updated_username)
+        self.assertEqual(self.user.created_at.strftime("%Y-%m-%d"), '2022-02-13')
         self.assertNotEqual(self.user.updated_at.strftime("%Y-%m-%d"), '2022-02-13')
 
     def test_decrement_user_when_delete_user(self):
-        users = User.objects.all()
-        self.assertEqual(len(users), 1)
-        users[0].delete()
-        users = User.objects.all()
-        self.assertEqual(len(users), 0)
+        user_count = get_user_model().objects.count()
+        self.assertEqual(user_count, 1)
+
+        get_user_model().objects.first().delete()
+
+        user_count = get_user_model().objects.count()
+        self.assertEqual(user_count, 0)
