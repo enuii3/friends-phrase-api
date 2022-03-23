@@ -128,6 +128,23 @@ class Phrase(models.Model):
         return self.text
 
 
+class CommentManager(models.Manager):
+    def create_comment(self, text, text_language, user, phrase):
+        if not text:
+            raise ValueError('text is must')
+        if not text_language:
+            raise ValueError('text_language is must')
+        if not phrase:
+            raise ValueError('phrase is must')
+        if not user:
+            raise ValueError('user is must')
+
+        comment = self.create(text=text, user=user, phrase=phrase)
+        comment.text_language.add(text_language)
+        comment.save()
+        return comment
+
+
 class Comment(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     text = models.CharField(max_length=1000)
@@ -143,7 +160,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = models.Manager()
+    objects = CommentManager()
 
     def __str__(self):
         return self.text

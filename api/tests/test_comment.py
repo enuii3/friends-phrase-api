@@ -1,14 +1,251 @@
 from django.test import TestCase
+from django.urls import reverse
 from datetime import datetime
-from .factories.comment import TestCommentFactoryWith
+from .factories.comment import TestCommentFactoryWith, CommentFactoryWith
 from .factories.language import LanguageFactory
 from .factories.phrase import TestPhraseFactoryWith
 from .factories.user import TestUserFactory
 from api.models import Phrase, Comment
 from django.contrib.auth import get_user_model
 from freezegun import freeze_time
+from rest_framework import status
+from rest_framework.test import APITestCase, APIClient
 
 DT = datetime(2022, 2, 22, 2, 22)
+UPDATE_DT = datetime(2022, 3, 22, 2, 22)
+CREATE_COMMENT_URL = '/api/comment/'
+
+
+def detail_comment_url(comment_id):
+    return reverse('api:comment-detail', args=[comment_id])
+
+
+def create_phrase(text_language, translated_word_language):
+    phrase = TestPhraseFactoryWith(user=TestUserFactory(email='phrase_user@sample.com'))
+    phrase.text_language.add(text_language)
+    phrase.translated_word_language.add(translated_word_language)
+    return phrase
+
+
+class CommentApiTest(APITestCase):
+    def setUp(self):
+        self.user = TestUserFactory()
+        self.test_en = LanguageFactory(name='test_en')
+        self.test_ja = LanguageFactory(name='test_ja')
+        self.test_phrase = create_phrase(self.test_en, self.test_ja)
+
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_should_create_comment(self):
+        payload = {
+            "text": 'text',
+            "text_language": self.test_en.id,
+            "phrase": self.test_phrase.id,
+        }
+        with freeze_time(DT):
+            res = self.client.post(CREATE_COMMENT_URL, payload)
+        comment = Comment.objects.get(**payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(comment.text, payload['text'])
+        self.assertEqual(comment.text_language.first(), self.test_en)
+        self.assertEqual(comment.phrase, self.test_phrase)
+        self.assertEqual(comment.user.username, self.user.username)
+        self.assertEqual(comment.created_at, DT)
+        self.assertEqual(comment.updated_at, DT)
+
+    def test_should_not_create_comment_with_blank_value(self):
+        payload = {
+            "text": '',
+            "text_language": '',
+            "phrase": '',
+        }
+        res = self.client.post(CREATE_COMMENT_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
+
+    def test_should_not_create_comment_with_missing_key(self):
+        payload = {
+            "test_text": 'text',
+            "test_text_language": self.test_en.id,
+            "test_phrase": self.test_phrase.id,
+        }
+        res = self.client.post(CREATE_COMMENT_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field is required.')
+        self.assertEqual(res.data['text_language'][0], 'This list may not be empty.')
+        self.assertEqual(res.data['phrase'][0], 'This field is required.')
+
+    def test_should_update_comment(self):
+        update_payload = {
+            "text": 'update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        with freeze_time(DT):
+            dummy_comment = CommentFactoryWith(user=self.user, phrase=self.test_phrase)
+        with freeze_time(UPDATE_DT):
+            res = self.client.put(detail_comment_url(dummy_comment.id), update_payload)
+        comment = Comment.objects.get(**update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(comment.text, update_payload['text'])
+        self.assertEqual(comment.text_language.first(), self.test_ja)
+        self.assertEqual(comment.phrase, self.test_phrase)
+        self.assertEqual(comment.user.username, self.user.username)
+        self.assertEqual(comment.created_at, DT)
+        self.assertEqual(comment.updated_at, UPDATE_DT)
+
+    def test_should_not_update_comment_by_not_owner(self):
+        update_payload = {
+            "text": 'update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        another_user = TestUserFactory(email='another_user@sample.com')
+        another_comment = CommentFactoryWith(user=another_user, phrase=self.test_phrase, text='another_text')
+        res = self.client.put(detail_comment_url(another_comment.id), update_payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data['detail'], 'You do not have permission to perform this action.')
+
+    def test_should_not_update_comment_with_blank_value(self):
+        update_payload = {
+            "text": '',
+            "text_language": '',
+            "phrase": '',
+        }
+        another_comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
+        res = self.client.put(detail_comment_url(another_comment.id), update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
+
+    def test_should_not_update_comment_with_missing_key(self):
+        update_payload = {
+            "test_text": 'update_text',
+            "test_text_language": self.test_ja.id,
+            "test_phrase": self.test_phrase.id,
+        }
+        another_comment = CommentFactoryWith(text='test_text', phrase=self.test_phrase, user=self.user)
+        res = self.client.put(detail_comment_url(another_comment.id), update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field is required.')
+        self.assertEqual(res.data['text_language'][0], 'This list may not be empty.')
+        self.assertEqual(res.data['phrase'][0], 'This field is required.')
+
+    def test_should_not_update_comment_with_not_exists(self):
+        update_payload = {
+            "text": 'update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        another_comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
+        not_exits_comment_url = detail_comment_url(another_comment.id) + '1'
+        res = self.client.put(not_exits_comment_url, update_payload)
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_should_partial_update_comment(self):
+        partial_update_payload = {
+            "text": 'partial_update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        with freeze_time(DT):
+            dummy_comment = CommentFactoryWith(user=self.user, phrase=self.test_phrase)
+        with freeze_time(UPDATE_DT):
+            res = self.client.patch(detail_comment_url(dummy_comment.id), partial_update_payload)
+        comment = Comment.objects.get(**partial_update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(comment.text, partial_update_payload['text'])
+        self.assertEqual(comment.text_language.first(), self.test_ja)
+        self.assertEqual(comment.phrase, self.test_phrase)
+        self.assertEqual(comment.user.username, self.user.username)
+        self.assertEqual(comment.created_at, DT)
+        self.assertEqual(comment.updated_at, UPDATE_DT)
+
+    def test_should_not_partial_update_comment_by_not_owner(self):
+        partial_update_payload = {
+            "text": 'partial_update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        another_user = TestUserFactory(email='another_user@sample.com')
+        another_comment = CommentFactoryWith(user=another_user, phrase=self.test_phrase, text='another_text')
+        res = self.client.patch(detail_comment_url(another_comment.id), partial_update_payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data['detail'], 'You do not have permission to perform this action.')
+
+    def test_should_not_partial_update_comment_with_blank_value(self):
+        partial_update_payload = {
+            "text": '',
+            "text_language": '',
+            "phrase": '',
+        }
+        comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
+        res = self.client.patch(detail_comment_url(comment.id), partial_update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
+
+    def test_should_not_partial_update_comment_with_missing_key(self):
+        partial_update_payload = {
+            "test_text": 'partial_update_text',
+            "test_text_language": self.test_ja.id,
+            "test_phrase": self.test_phrase.id,
+        }
+        comment = CommentFactoryWith(text='test_text',
+                                     text_language=self.test_en,
+                                     phrase=self.test_phrase,
+                                     user=self.user)
+        self.client.patch(detail_comment_url(comment.id), partial_update_payload)
+
+        self.assertEqual(comment.text, 'test_text')
+        self.assertEqual(comment.text_language.first(), self.test_en)
+        self.assertEqual(comment.phrase, self.test_phrase)
+
+    def test_should_not_partial_update_comment_with_not_exists(self):
+        partial_update_payload = {
+            "text": 'partial_update_text',
+            "text_language": self.test_ja.id,
+            "phrase": self.test_phrase.id,
+        }
+        another_comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
+        not_exits_comment_url = detail_comment_url(another_comment.id) + '1'
+        res = self.client.patch(not_exits_comment_url, partial_update_payload)
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_should_delete_comment_by_owner(self):
+        comment = TestCommentFactoryWith(user=self.user, phrase=self.test_phrase)
+        self.assertEqual(Comment.objects.count(), 1)
+        res = self.client.delete(detail_comment_url(comment.id))
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_should_not_delete_comment_by_not_owner(self):
+        another_user = TestUserFactory(email='another_user@sample.com')
+        another_comment = CommentFactoryWith(user=another_user, phrase=self.test_phrase)
+        res = self.client.delete(detail_comment_url(another_comment.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data['detail'], 'You do not have permission to perform this action.')
+
+    def test_should_not_delete_with_not_exists(self):
+        another_user = TestUserFactory(email='another_user@sample.com')
+        another_comment = CommentFactoryWith(user=another_user, phrase=self.test_phrase, text='dummy_text')
+        dummy_comment_url = detail_comment_url(another_comment.id) + '1'
+
+        res = self.client.delete(dummy_comment_url)
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class CommentModelTest(TestCase):
@@ -25,10 +262,11 @@ class CommentModelTest(TestCase):
                                             text_language=self.test_en,
                                             translated_word_language=self.test_ja
                                             )
-        self.comment = TestCommentFactoryWith(user=self.comment_user,
-                                              phrase=self.phrase,
-                                              text_language=self.test_en
-                                              )
+        self.comment = Comment.objects.create_comment(text='test_text',
+                                                      text_language=self.test_en,
+                                                      user=self.comment_user,
+                                                      phrase=self.phrase,
+                                                      )
 
     def test_basic_values(self):
         self.assertEqual(self.comment.text, 'test_text')

@@ -6,6 +6,7 @@ router = DefaultRouter()
 
 router.register('profile', views.ProfileViewSet)
 router.register('phrase', views.PhraseViewSet)
+router.register('comment', views.CommentViewSet)
 
 app_name = 'api'
 
