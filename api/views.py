@@ -1,6 +1,6 @@
-from rest_framework import generics, permissions
-from .serializers import UserSerializer
-from .models import User
+from rest_framework import generics, permissions, viewsets
+from .serializers import UserSerializer, ProfileSerializer
+from .models import User, Profile
 from .permissions import IsOwnerOrReadOnly
 
 
@@ -20,3 +20,12 @@ class RetrieveUpdateDestroyUserView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsOwnerOrReadOnly,)
+
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = (IsOwnerOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
