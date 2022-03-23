@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Profile
+from .models import Profile, Language
 from django.contrib.auth import get_user_model
 
 
@@ -28,3 +28,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'sex': {'required': True},
             'date_of_birth': {'required': True},
         }
+
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = '__all__'
