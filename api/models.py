@@ -73,6 +73,8 @@ class Language(models.Model):
 
     name = models.CharField(max_length=language_max_length, choices=LANGUAGE_CHOICES)
 
+    objects = models.Manager()
+
     def __str__(self):
         return self.name
 
