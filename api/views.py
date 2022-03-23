@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, viewsets
-from .serializers import UserSerializer, ProfileSerializer, LanguageSerializer, PhraseSerializer
-from .models import User, Profile, Language, Phrase
+from .serializers import UserSerializer, ProfileSerializer, LanguageSerializer, PhraseSerializer, CommentSerializer
+from .models import User, Profile, Language, Phrase, Comment
 from .permissions import IsOwnerOrReadOnly
 
 
@@ -39,6 +39,15 @@ class RetrieveLanguage(generics.RetrieveAPIView):
 class PhraseViewSet(viewsets.ModelViewSet):
     queryset = Phrase.objects.all()
     serializer_class = PhraseSerializer
+    permission_classes = (IsOwnerOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
     permission_classes = (IsOwnerOrReadOnly,)
 
     def perform_create(self, serializer):

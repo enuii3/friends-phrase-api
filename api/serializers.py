@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Profile, Language, Phrase
+from .models import Profile, Language, Phrase, Comment
 from django.contrib.auth import get_user_model
 
 
@@ -56,4 +56,20 @@ class PhraseSerializer(serializers.ModelSerializer):
             'text_language': {'required': True},
             'translated_word': {'required': True},
             'translated_word_language': {'required': True},
+        }
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    phrase = serializers.PrimaryKeyRelatedField(
+        many=False,
+        queryset=Phrase.objects.all()
+    )
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'text', 'text_language', 'created_at', 'updated_at', 'username', 'phrase']
+        extra_kwargs = {
+            'text': {'required': True},
+            'text_language': {'required': True},
         }
