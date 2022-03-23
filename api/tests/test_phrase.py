@@ -122,8 +122,8 @@ class PhraseApiTest(APITestCase):
             'translated_word': '',
             'translated_word_language': '',
         }
-        dummy_phrase = PhraseFactoryWith(user=self.user)
-        res = self.client.put(detail_phrase_url(dummy_phrase.id), update_payload)
+        phrase = PhraseFactoryWith(user=self.user)
+        res = self.client.put(detail_phrase_url(phrase.id), update_payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field may not be blank.')
@@ -137,10 +137,10 @@ class PhraseApiTest(APITestCase):
                           'missing_translated_word': 'テスト テキスト',
                           'missing_translated_word_language': self.test_ja.id,
                           }
-        dummy_phrase = PhraseFactoryWith(user=self.user,
-                                         text_language=self.test_ja.id,
-                                         translated_word_language=self.test_en.id)
-        res = self.client.put(detail_phrase_url(dummy_phrase.id), update_payload)
+        phrase = PhraseFactoryWith(user=self.user,
+                                   text_language=self.test_ja.id,
+                                   translated_word_language=self.test_en.id)
+        res = self.client.put(detail_phrase_url(phrase.id), update_payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field is required.')
@@ -155,12 +155,100 @@ class PhraseApiTest(APITestCase):
             'translated_word': 'update_translated_word',
             'translated_word_language': self.test_en.id,
         }
+        phrase = PhraseFactoryWith(user=self.user,
+                                   text_language=self.test_ja.id,
+                                   translated_word_language=self.test_en.id)
+
+        not_exists_url = detail_phrase_url(phrase.id) + '1'
+        res = self.client.put(not_exists_url, update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_should_partial_update_phrase(self):
+        partial_update_payload = {'text': 'partial_update_text',
+                                  'text_language': self.test_ja.id,
+                                  'translated_word': '編集済のテキスト',
+                                  'translated_word_language': self.test_en.id,
+                                  }
+        with freeze_time(DT):
+            phrase = TestPhraseFactoryWith(user=self.user,
+                                           text_language=self.test_en.id,
+                                           translated_word_language=self.test_ja.id)
+        with freeze_time(UPDATE_DT):
+            res = self.client.patch(detail_phrase_url(phrase.id), partial_update_payload)
+        phrase.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(phrase.text, partial_update_payload['text'])
+        self.assertEqual(phrase.text_language.first().id, partial_update_payload['text_language'])
+        self.assertEqual(phrase.translated_word, partial_update_payload['translated_word'])
+        self.assertEqual(phrase.translated_word_language.first().id, partial_update_payload['translated_word_language'])
+        self.assertEqual(phrase.created_at, DT)
+        self.assertEqual(phrase.updated_at, UPDATE_DT)
+        self.assertEqual(phrase.user, self.user)
+
+    def test_should_not_partial_update_phrase_with_not_owner(self):
+        partial_update_payload = {'text': 'partial_update_text',
+                                  'text_language': self.test_ja.id,
+                                  'translated_word': 'partial_update_translated_word',
+                                  'translated_word_language': self.test_en.id,
+                                  }
+        another_user = UserFactory(username='another_user', email='another_user@sample.com', password='another_pw')
+        another_phrase = TestPhraseFactoryWith(user=another_user,
+                                               text_language=self.test_en.id,
+                                               translated_word_language=self.test_ja.id)
+        res = self.client.patch(detail_phrase_url(another_phrase.id), partial_update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data['detail'], 'You do not have permission to perform this action.')
+
+    def test_should_not_partial_update_phrase_by_blank_value(self):
+        partial_update_payload = {
+            'text': '',
+            'text_language': '',
+            'translated_word': '',
+            'translated_word_language': '',
+        }
+        phrase = PhraseFactoryWith(user=self.user)
+        res = self.client.patch(detail_phrase_url(phrase.id), partial_update_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['text'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['translated_word'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['translated_word_language'][0], '“” is not a valid UUID.')
+
+    def test_should_not_partial_update_phrase_by_missing_key(self):
+        partial_update_payload = {'missing_text': 'test_text',
+                                  'missing_text_language': self.test_en.id,
+                                  'missing_translated_word': 'テスト テキスト',
+                                  'missing_translated_word_language': self.test_ja.id,
+                                  }
+        phrase = PhraseFactoryWith(user=self.user,
+                                   text='test_text',
+                                   text_language=self.test_ja.id,
+                                   translated_word='テスト テキスト',
+                                   translated_word_language=self.test_en.id)
+        self.client.patch(detail_phrase_url(phrase.id), partial_update_payload)
+
+        self.assertEqual(phrase.text, 'test_text')
+        self.assertEqual(phrase.text_language.first(), self.test_ja)
+        self.assertEqual(phrase.translated_word, 'テスト テキスト')
+        self.assertEqual(phrase.translated_word_language.first(), self.test_en)
+
+    def test_should_not_partial_update_phrase_with_not_exists(self):
+        partial_update_payload = {
+            'text': 'partial_update_text',
+            'text_language': self.test_ja.id,
+            'translated_word': 'partial_update_translated_word',
+            'translated_word_language': self.test_en.id,
+        }
         dummy_phrase = PhraseFactoryWith(user=self.user,
                                          text_language=self.test_ja.id,
                                          translated_word_language=self.test_en.id)
 
         not_exists_url = detail_phrase_url(dummy_phrase.id) + '1'
-        res = self.client.put(not_exists_url, update_payload)
+        res = self.client.patch(not_exists_url, partial_update_payload)
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
