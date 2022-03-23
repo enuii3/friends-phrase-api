@@ -77,6 +77,26 @@ class Language(models.Model):
         return self.name
 
 
+class PhraseManager(models.Manager):
+    def create_phrase(self, text, text_language, translated_word, translated_word_language, user):
+        if not text:
+            raise ValueError('text is must')
+        if not text_language:
+            raise ValueError('text_language is must')
+        if not translated_word:
+            raise ValueError('translated_word is must')
+        if not translated_word_language:
+            raise ValueError('translated_word_language is must')
+        if not user:
+            raise ValueError('user is must')
+
+        phrase = self.create(text=text, translated_word=translated_word, user=user)
+        phrase.text_language.add(text_language)
+        phrase.translated_word_language.add(translated_word_language)
+        phrase.save()
+        return phrase
+
+
 class Phrase(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     user = models.ForeignKey(
@@ -100,7 +120,7 @@ class Phrase(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = models.Manager()
+    objects = PhraseManager()
 
     def __str__(self):
         return self.text

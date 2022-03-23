@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Profile, Language
+from .models import Profile, Language, Phrase
 from django.contrib.auth import get_user_model
 
 
@@ -34,3 +34,26 @@ class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
         fields = '__all__'
+
+
+class PhraseSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Phrase
+        fields = ['id',
+                  'text',
+                  'text_language',
+                  'translated_word',
+                  'translated_word_language',
+                  'created_at',
+                  'updated_at',
+                  'username',
+                  ]
+
+        extra_kwargs = {
+            'text': {'required': True},
+            'text_language': {'required': True},
+            'translated_word': {'required': True},
+            'translated_word_language': {'required': True},
+        }
