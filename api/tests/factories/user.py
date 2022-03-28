@@ -5,13 +5,12 @@ faker = Faker(['en_US'])
 
 
 class UserFactory(factory.django.DjangoModelFactory):
-
     class Meta:
         model = 'api.User'
         django_get_or_create = ('username', 'email', 'password')
 
     username = faker.name()
-    email = faker.email()
+    email = factory.Sequence(lambda n: "{0}{1}".format(n, faker.email()))
     password = faker.password
 
 
