@@ -155,6 +155,30 @@ class UnAuthorizedUserApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    def test_should_return_access_token(self):
+        payload = {'username': 'test_user', 'email': 'test_user@sample.com', 'password': 'dummy_pw'}
+        get_user_model().objects.create_user(**payload)
+        res = self.client.post(TOKEN_URL, payload)
+
+        self.assertIn('access', res.data)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_should_not_return_access_token_when_blank_value(self):
+        payload = {'username': '', 'email': '', 'password': ''}
+        res = self.client.post(TOKEN_URL, payload)
+
+        self.assertEqual(res.data['email'][0], 'This field may not be blank.')
+        self.assertEqual(res.data['password'][0], 'This field may not be blank.')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_should_not_return_access_token_when_missing_key(self):
+        payload = {'test_username': 'test_user', 'test_email': 'test_user@sample.com', 'test_password': 'dummy_pw'}
+        res = self.client.post(TOKEN_URL, payload)
+
+        self.assertEqual(res.data['email'][0], 'This field is required.')
+        self.assertEqual(res.data['password'][0], 'This field is required.')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_should_return_401_response_by_un_authorized_user(self):
         res = self.client.get(LOGIN_USER_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
