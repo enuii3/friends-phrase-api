@@ -64,21 +64,6 @@ class Profile(models.Model):
         return str(self.user)
 
 
-class Language(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
-    LANGUAGE_CHOICES = (
-        ('en', 'English'),
-        ('ja', 'Japanese'),
-    )
-
-    name = models.CharField(max_length=language_max_length, choices=LANGUAGE_CHOICES)
-
-    objects = models.Manager()
-
-    def __str__(self):
-        return self.name
-
-
 class PhraseManager(models.Manager):
     def create_phrase(self, text, text_language, translated_word, translated_word_language, user):
         if not text:
@@ -92,9 +77,9 @@ class PhraseManager(models.Manager):
         if not user:
             raise ValueError('user is must')
 
-        phrase = self.create(text=text, translated_word=translated_word, user=user)
-        phrase.text_language.add(text_language)
-        phrase.translated_word_language.add(translated_word_language)
+        phrase = self.create(text=text, text_language=text_language, translated_word=translated_word,
+                             translated_word_language=translated_word_language,
+                             user=user)
         phrase.save()
         return phrase
 
@@ -108,17 +93,11 @@ class Phrase(models.Model):
     text = models.CharField(
         max_length=1000
     )
-    text_language = models.ManyToManyField(
-        Language,
-        related_name='text_language',
-    )
+    text_language = models.CharField(max_length=8)
     translated_word = models.CharField(
         max_length=1000,
     )
-    translated_word_language = models.ManyToManyField(
-        Language,
-        related_name='translated_word_language',
-    )
+    translated_word_language = models.CharField(max_length=8)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -139,8 +118,7 @@ class CommentManager(models.Manager):
         if not user:
             raise ValueError('user is must')
 
-        comment = self.create(text=text, user=user, phrase=phrase)
-        comment.text_language.add(text_language)
+        comment = self.create(text=text, text_language=text_language, user=user, phrase=phrase)
         comment.save()
         return comment
 
@@ -153,10 +131,7 @@ class Comment(models.Model):
         on_delete=models.CASCADE
     )
     phrase = models.ForeignKey(Phrase, on_delete=models.CASCADE)
-    text_language = models.ManyToManyField(
-        Language,
-        related_name='comment_language'
-    )
+    text_language = models.CharField(max_length=8)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

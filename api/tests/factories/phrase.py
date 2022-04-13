@@ -18,25 +18,9 @@ class PhraseFactoryWith(factory.django.DjangoModelFactory):
         UserFactory,
     )
     text = faker.sentence(nb_words=8)
+    text_language = 'en'
     translated_word = faker.sentence(nb_words=8),
-
-    @factory.post_generation
-    def text_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.text_language.add(extracted)
-
-    @factory.post_generation
-    def translated_word_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.translated_word_language.add(extracted)
+    translated_word_language = 'jp'
 
 
 class TestPhraseFactoryWith(factory.django.DjangoModelFactory):
@@ -51,22 +35,6 @@ class TestPhraseFactoryWith(factory.django.DjangoModelFactory):
         TestUserFactory,
     )
     text = 'test_text'
+    text_language = 'en'
+    translated_word_language = 'jp'
     translated_word = 'test_translated_word'
-
-    @factory.post_generation
-    def text_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.text_language.add(extracted)
-
-    @factory.post_generation
-    def translated_word_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.translated_word_language.add(extracted)

@@ -18,15 +18,7 @@ class CommentFactoryWith(factory.django.DjangoModelFactory):
         PhraseFactoryWith,
     )
     text = faker.sentence(nb_words=8)
-
-    @factory.post_generation
-    def text_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.text_language.add(extracted)
+    text_language = 'jp'
 
 
 class TestCommentFactoryWith(factory.django.DjangoModelFactory):
@@ -41,12 +33,4 @@ class TestCommentFactoryWith(factory.django.DjangoModelFactory):
         TestPhraseFactoryWith,
     )
     text = 'test_text'
-
-    @factory.post_generation
-    def text_language(self, create, extracted, **kwargs):
-        if not create:
-            print(kwargs)
-            return
-
-        if extracted:
-            self.text_language.add(extracted)
+    text_language = 'jp'
