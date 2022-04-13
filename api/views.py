@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, viewsets
-from .serializers import UserSerializer, ProfileSerializer, LanguageSerializer, PhraseSerializer, CommentSerializer
-from .models import User, Profile, Language, Phrase, Comment
+from .serializers import UserSerializer, ProfileSerializer, PhraseSerializer, CommentSerializer
+from .models import User, Profile, Phrase, Comment
 from .permissions import IsOwnerOrReadOnly
 
 
@@ -29,11 +29,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-class RetrieveLanguage(generics.RetrieveAPIView):
-    queryset = Language.objects.all()
-    serializer_class = LanguageSerializer
 
 
 class PhraseViewSet(viewsets.ModelViewSet):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Profile, Language, Phrase, Comment
+from .models import Profile, Phrase, Comment
 from django.contrib.auth import get_user_model
 
 
@@ -30,14 +30,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         }
 
 
-class LanguageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Language
-        fields = '__all__'
-
-
 class PhraseSerializer(serializers.ModelSerializer):
+    LANGUAGE_CHOICES = (
+        ('en', 'English'),
+        ('jp', 'Japanese'),
+    )
     username = serializers.ReadOnlyField(source='user.username')
+    text_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
+    translated_word_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
 
     class Meta:
         model = Phrase
@@ -60,7 +60,12 @@ class PhraseSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    LANGUAGE_CHOICES = (
+        ('en', 'English'),
+        ('jp', 'Japanese'),
+    )
     username = serializers.ReadOnlyField(source='user.username')
+    text_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
     phrase = serializers.PrimaryKeyRelatedField(
         many=False,
         queryset=Phrase.objects.all()

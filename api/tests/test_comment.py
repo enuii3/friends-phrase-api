@@ -2,7 +2,6 @@ from django.test import TestCase
 from django.urls import reverse
 from datetime import datetime
 from .factories.comment import TestCommentFactoryWith, CommentFactoryWith
-from .factories.language import LanguageFactory
 from .factories.phrase import TestPhraseFactoryWith
 from .factories.user import TestUserFactory
 from api.models import Phrase, Comment
@@ -20,19 +19,10 @@ def detail_comment_url(comment_id):
     return reverse('api:comment-detail', args=[comment_id])
 
 
-def create_phrase(text_language, translated_word_language):
-    phrase = TestPhraseFactoryWith(user=TestUserFactory(email='phrase_user@sample.com'))
-    phrase.text_language.add(text_language)
-    phrase.translated_word_language.add(translated_word_language)
-    return phrase
-
-
 class CommentApiTest(APITestCase):
     def setUp(self):
         self.user = TestUserFactory()
-        self.test_en = LanguageFactory(name='test_en')
-        self.test_ja = LanguageFactory(name='test_ja')
-        self.test_phrase = create_phrase(self.test_en, self.test_ja)
+        self.test_phrase = TestPhraseFactoryWith(user=TestUserFactory(email='phrase_user@sample.com'))
 
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
@@ -40,7 +30,7 @@ class CommentApiTest(APITestCase):
     def test_should_create_comment(self):
         payload = {
             "text": 'text',
-            "text_language": self.test_en.id,
+            "text_language": 'en',
             "phrase": self.test_phrase.id,
         }
         with freeze_time(DT):
@@ -49,7 +39,7 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(comment.text, payload['text'])
-        self.assertEqual(comment.text_language.first(), self.test_en)
+        self.assertEqual(comment.text_language, payload['text_language'])
         self.assertEqual(comment.phrase, self.test_phrase)
         self.assertEqual(comment.user.username, self.user.username)
         self.assertEqual(comment.created_at, DT)
@@ -65,26 +55,26 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field may not be blank.')
-        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['text_language'][0], '"" is not a valid choice.')
         self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
 
     def test_should_not_create_comment_with_missing_key(self):
         payload = {
             "test_text": 'text',
-            "test_text_language": self.test_en.id,
+            "test_text_language": 'en',
             "test_phrase": self.test_phrase.id,
         }
         res = self.client.post(CREATE_COMMENT_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field is required.')
-        self.assertEqual(res.data['text_language'][0], 'This list may not be empty.')
+        self.assertEqual(res.data['text_language'][0], 'This field is required.')
         self.assertEqual(res.data['phrase'][0], 'This field is required.')
 
     def test_should_update_comment(self):
         update_payload = {
             "text": 'update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         with freeze_time(DT):
@@ -95,7 +85,7 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(comment.text, update_payload['text'])
-        self.assertEqual(comment.text_language.first(), self.test_ja)
+        self.assertEqual(comment.text_language, update_payload['text_language'])
         self.assertEqual(comment.phrase, self.test_phrase)
         self.assertEqual(comment.user.username, self.user.username)
         self.assertEqual(comment.created_at, DT)
@@ -104,7 +94,7 @@ class CommentApiTest(APITestCase):
     def test_should_not_update_comment_by_not_owner(self):
         update_payload = {
             "text": 'update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         another_user = TestUserFactory(email='another_user@sample.com')
@@ -124,13 +114,13 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field may not be blank.')
-        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['text_language'][0], '"" is not a valid choice.')
         self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
 
     def test_should_not_update_comment_with_missing_key(self):
         update_payload = {
             "test_text": 'update_text',
-            "test_text_language": self.test_ja.id,
+            "test_text_language": 'jp',
             "test_phrase": self.test_phrase.id,
         }
         another_comment = CommentFactoryWith(text='test_text', phrase=self.test_phrase, user=self.user)
@@ -138,13 +128,13 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field is required.')
-        self.assertEqual(res.data['text_language'][0], 'This list may not be empty.')
+        self.assertEqual(res.data['text_language'][0], 'This field is required.')
         self.assertEqual(res.data['phrase'][0], 'This field is required.')
 
     def test_should_not_update_comment_with_not_exists(self):
         update_payload = {
             "text": 'update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         another_comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
@@ -155,7 +145,7 @@ class CommentApiTest(APITestCase):
     def test_should_partial_update_comment(self):
         partial_update_payload = {
             "text": 'partial_update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         with freeze_time(DT):
@@ -166,7 +156,7 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(comment.text, partial_update_payload['text'])
-        self.assertEqual(comment.text_language.first(), self.test_ja)
+        self.assertEqual(comment.text_language, 'jp')
         self.assertEqual(comment.phrase, self.test_phrase)
         self.assertEqual(comment.user.username, self.user.username)
         self.assertEqual(comment.created_at, DT)
@@ -175,7 +165,7 @@ class CommentApiTest(APITestCase):
     def test_should_not_partial_update_comment_by_not_owner(self):
         partial_update_payload = {
             "text": 'partial_update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         another_user = TestUserFactory(email='another_user@sample.com')
@@ -195,29 +185,29 @@ class CommentApiTest(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['text'][0], 'This field may not be blank.')
-        self.assertEqual(res.data['text_language'][0], '“” is not a valid UUID.')
+        self.assertEqual(res.data['text_language'][0], '"" is not a valid choice.')
         self.assertEqual(res.data['phrase'][0], 'This field may not be null.')
 
     def test_should_not_partial_update_comment_with_missing_key(self):
         partial_update_payload = {
             "test_text": 'partial_update_text',
-            "test_text_language": self.test_ja.id,
+            "test_text_language": 'jp',
             "test_phrase": self.test_phrase.id,
         }
         comment = CommentFactoryWith(text='test_text',
-                                     text_language=self.test_en,
+                                     text_language='en',
                                      phrase=self.test_phrase,
                                      user=self.user)
         self.client.patch(detail_comment_url(comment.id), partial_update_payload)
 
         self.assertEqual(comment.text, 'test_text')
-        self.assertEqual(comment.text_language.first(), self.test_en)
+        self.assertEqual(comment.text_language, 'en')
         self.assertEqual(comment.phrase, self.test_phrase)
 
     def test_should_not_partial_update_comment_with_not_exists(self):
         partial_update_payload = {
             "text": 'partial_update_text',
-            "text_language": self.test_ja.id,
+            "text_language": 'jp',
             "phrase": self.test_phrase.id,
         }
         another_comment = CommentFactoryWith(phrase=self.test_phrase, user=self.user)
@@ -251,26 +241,26 @@ class CommentApiTest(APITestCase):
 class CommentModelTest(TestCase):
     @freeze_time(DT)
     def setUp(self):
-        self.test_en = LanguageFactory(name='test_en')
-        self.test_ja = LanguageFactory(name='test_ja')
         self.updated_username = 'updated_username'
         self.updated_comment_text = 'updated_comment_text'
 
         self.phrase_user = TestUserFactory(username='phrase_user', email='phrase_user@sample.com')
         self.comment_user = TestUserFactory(username='comment_user', email='comment_user@sample.com')
-        self.phrase = TestPhraseFactoryWith(user=self.phrase_user,
-                                            text_language=self.test_en,
-                                            translated_word_language=self.test_ja
+        self.phrase = TestPhraseFactoryWith(user=self.phrase_user
+                                            # text_language=self.test_en,
+                                            # translated_word_language=self.test_ja
                                             )
-        self.comment = Comment.objects.create_comment(text='test_text',
-                                                      text_language=self.test_en,
-                                                      user=self.comment_user,
-                                                      phrase=self.phrase,
+        self.payload = {'text': 'test_text', 'text_language': 'en', 'user': self.comment_user, 'phrase': self.phrase}
+        self.comment = Comment.objects.create_comment(**self.payload
+                                                      # text='test_text',
+                                                      #                                           text_language='en',
+                                                      #                                           user=self.comment_user,
+                                                      #                                           phrase=self.phrase,
                                                       )
 
     def test_basic_values(self):
-        self.assertEqual(self.comment.text, 'test_text')
-        self.assertEqual(self.comment.text_language.first(), self.test_en)
+        self.assertEqual(self.comment.text, self.payload['text'])
+        self.assertEqual(self.comment.text_language, self.payload['text_language'])
         self.assertEqual(self.comment.user, self.comment_user)
         self.assertEqual(self.comment.phrase, self.phrase)
         self.assertEqual(self.comment.created_at, DT)
@@ -283,12 +273,12 @@ class CommentModelTest(TestCase):
         update_time = datetime(2022, 2, 23, 2, 22)
         with freeze_time(update_time):
             self.comment.text = self.updated_comment_text
-            self.comment.text_language.set([self.test_ja])
+            self.comment.text_language = 'jp'
             self.comment_user.username = self.updated_username
             self.comment.save()
 
         self.assertEqual(self.comment.text, self.updated_comment_text)
-        self.assertEqual(self.comment.text_language.first(), self.test_ja)
+        self.assertEqual(self.comment.text_language, 'jp')
         self.assertEqual(self.comment.user.username, self.updated_username)
         self.assertEqual(self.comment.created_at, DT)
         self.assertEqual(self.comment.updated_at, update_time)
