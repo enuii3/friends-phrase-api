@@ -29,7 +29,6 @@ class AuthorizedUserApiTest(TestCase):
         res = self.client.get(LOGIN_USER_URL)
 
         self.assertEqual(res.data['username'], self.user.username)
-        self.assertEqual(res.data['email'], self.user.email)
 
     def test_should_partial_update_user(self):
         payload = {'username': 'update_username', 'email': 'update_username@sample.com', 'password': 'dummy_pw'}

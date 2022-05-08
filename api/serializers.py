@@ -18,6 +18,15 @@ class UserSerializer(serializers.ModelSerializer):
         return get_user_model().objects.create_user(**validated_data)
 
 
+class LoginUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['username']
+        extra_kwargs = {
+            'username': {'required': True},
+        }
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
 
