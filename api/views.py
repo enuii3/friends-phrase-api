@@ -1,5 +1,9 @@
 from rest_framework import generics, permissions, viewsets
-from .serializers import UserSerializer, ProfileSerializer, PhraseSerializer, CommentSerializer
+from .serializers import UserSerializer, \
+    ProfileSerializer, \
+    PhraseSerializer, \
+    CommentSerializer, \
+    LoginUserSerializer
 from .models import User, Profile, Phrase, Comment
 from .permissions import IsOwnerOrReadOnly
 
@@ -9,8 +13,8 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
 
-class RetrieveLonginUserView(generics.RetrieveAPIView):
-    serializer_class = UserSerializer
+class RetrieveLoginUserView(generics.RetrieveAPIView):
+    serializer_class = LoginUserSerializer
 
     def get_object(self):
         return self.request.user
