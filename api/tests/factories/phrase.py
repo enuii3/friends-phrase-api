@@ -3,7 +3,8 @@ import factory
 from faker import Faker
 from .user import UserFactory, TestUserFactory
 
-faker = Faker(['en_US'])
+en_faker = Faker(['en_US'])
+jp_faker = Faker(['jp_JP'])
 
 
 class PhraseFactoryWith(factory.django.DjangoModelFactory):
@@ -17,9 +18,9 @@ class PhraseFactoryWith(factory.django.DjangoModelFactory):
     user = factory.SubFactory(
         UserFactory,
     )
-    text = faker.sentence(nb_words=8)
+    text = en_faker.sentence(nb_words=8)
     text_language = 'en'
-    translated_word = faker.sentence(nb_words=8),
+    translated_word = jp_faker.sentence(nb_words=8),
     translated_word_language = 'jp'
 
 
