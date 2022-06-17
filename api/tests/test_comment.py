@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase, APIClient
 
 DT = datetime(2022, 2, 22, 2, 22)
 UPDATE_DT = datetime(2022, 3, 22, 2, 22)
-CREATE_COMMENT_URL = '/api/comment/'
+CREATE_COMMENT_URL = '/api/comments/'
 
 
 def detail_comment_url(comment_id):
