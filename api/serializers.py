@@ -58,6 +58,7 @@ class PhraseSerializer(serializers.ModelSerializer):
                   'created_at',
                   'updated_at',
                   'username',
+                  'comments',
                   ]
 
         extra_kwargs = {
@@ -65,6 +66,7 @@ class PhraseSerializer(serializers.ModelSerializer):
             'text_language': {'required': True},
             'translated_word': {'required': True},
             'translated_word_language': {'required': True},
+            'comments': {'read_only': True}
         }
 
 
