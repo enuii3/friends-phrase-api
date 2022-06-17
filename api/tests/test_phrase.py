@@ -8,6 +8,7 @@ from .factories.user import TestUserFactory, UserFactory
 from api.models import Phrase
 from django.contrib.auth import get_user_model
 from freezegun import freeze_time
+from api.serializers import PhraseSerializer
 
 DT = datetime(2022, 2, 22, 2, 22)
 UPDATE_DT = datetime(2022, 3, 22, 2, 22)
@@ -45,6 +46,7 @@ class PhraseApiTest(APITestCase):
         self.assertEqual(phrase.created_at, DT)
         self.assertEqual(phrase.updated_at, DT)
         self.assertEqual(phrase.user, self.user)
+        self.assertEqual(phrase.comments.count(), 0)
 
 
 def test_should_not_create_phrase_by_blank_value(self):
@@ -99,6 +101,7 @@ def test_should_update_phrase(self):
     self.assertEqual(phrase.created_at, DT)
     self.assertEqual(phrase.updated_at, UPDATE_DT)
     self.assertEqual(phrase.user, self.user)
+    self.assertEqual(phrase.comments.count(), 0)
 
 
 def test_should_not_update_phrase_with_not_owner(self):
@@ -191,6 +194,7 @@ def test_should_partial_update_phrase(self):
     self.assertEqual(phrase.created_at, DT)
     self.assertEqual(phrase.updated_at, UPDATE_DT)
     self.assertEqual(phrase.user, self.user)
+    self.assertEqual(phrase.comments.count(), 0)
 
 
 def test_should_not_partial_update_phrase_with_not_owner(self):

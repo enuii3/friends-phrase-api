@@ -44,6 +44,7 @@ class CommentApiTest(APITestCase):
         self.assertEqual(comment.user.username, self.user.username)
         self.assertEqual(comment.created_at, DT)
         self.assertEqual(comment.updated_at, DT)
+        self.assertEqual(self.test_phrase.comments.count(), 1)
 
     def test_should_not_create_comment_with_blank_value(self):
         payload = {

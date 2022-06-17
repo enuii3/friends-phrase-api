@@ -130,7 +130,7 @@ class Comment(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
-    phrase = models.ForeignKey(Phrase, on_delete=models.CASCADE)
+    phrase = models.ForeignKey(Phrase, on_delete=models.CASCADE, related_name='comments')
     text_language = models.CharField(max_length=8)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
