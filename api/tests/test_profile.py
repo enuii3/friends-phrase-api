@@ -12,7 +12,7 @@ from django.db import IntegrityError
 
 DT = datetime(2022, 2, 22, 2, 22)
 UPDATE_DT = datetime(2022, 3, 22, 2, 22)
-CREATE_PROFILE_URL = '/api/profile/'
+CREATE_PROFILE_URL = '/api/profiles/'
 LOGIN_URL = '/api/login_user/'
 
 

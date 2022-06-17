@@ -12,7 +12,7 @@ from api.serializers import PhraseSerializer
 
 DT = datetime(2022, 2, 22, 2, 22)
 UPDATE_DT = datetime(2022, 3, 22, 2, 22)
-CREATE_PHRASE_URL = '/api/phrase/'
+CREATE_PHRASE_URL = '/api/phrases/'
 
 
 def detail_phrase_url(phrase_id):

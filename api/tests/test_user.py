@@ -9,7 +9,7 @@ from .factories.user import TestUserFactory
 
 DT = datetime(2022, 2, 22, 2, 22)
 UPDATE_DT = datetime(2022, 3, 22, 2, 22)
-CREATE_USER_URL = '/api/user/'
+CREATE_USER_URL = '/api/users/'
 LOGIN_USER_URL = '/api/login_user/'
 TOKEN_URL = '/authen/jwt/create/'
 
