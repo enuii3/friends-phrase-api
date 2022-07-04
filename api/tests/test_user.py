@@ -39,8 +39,6 @@ class AuthorizedUserApiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(self.user.username, payload['username'])
         self.assertEqual(self.user.email, payload['email'])
-        self.assertEqual(self.user.created_at, DT)
-        self.assertEqual(self.user.updated_at, UPDATE_DT)
 
     def test_should_not_partial_update_when_missing_key(self):
         payload = {'update_username': 'update_username',
@@ -185,8 +183,7 @@ class UnAuthorizedUserApiTest(TestCase):
 
     def test_should_create_new_user(self):
         payload = {'username': 'dummy', 'email': 'dummy@sample.com', 'password': 'dummy_pw'}
-        with freeze_time(DT):
-            res = self.client.post(CREATE_USER_URL, payload)
+        res = self.client.post(CREATE_USER_URL, payload)
         user = get_user_model().objects.get(**res.data)
 
         self.assertEqual(get_user_model().objects.count(), 1)
@@ -195,8 +192,6 @@ class UnAuthorizedUserApiTest(TestCase):
         self.assertEqual(user.email, payload['email'])
         self.assertTrue(user.check_password(payload['password']))
         self.assertNotIn('password', res.data)
-        self.assertEqual(user.created_at, DT)
-        self.assertEqual(user.updated_at, DT)
 
     def test_should_not_create_user_by_some_credential(self):
         payload = {'username': 'dummy', 'email': 'dummy@sample.com', 'password': 'dummy_pw'}
@@ -278,23 +273,6 @@ class UserModelTest(TestCase):
         self.assertEqual(self.user.email, 'test_email@sample.com')
         self.assertEqual(self.user.is_active, True)
         self.assertEqual(self.user.is_staff, False)
-        self.assertEqual(self.user.created_at, DT)
-        self.assertEqual(self.user.updated_at, DT)
-
-    def test_value_when_edit_each_value(self):
-        self.assertEqual(self.user.created_at, DT)
-        self.assertEqual(self.user.updated_at, DT)
-
-        update_time = datetime(2022, 2, 23, 2, 22)
-        with freeze_time(update_time):
-            self.user.username = self.updated_username
-            self.user.email = self.updated_email
-            self.user.save()
-
-        self.assertEqual(self.user.username, self.updated_username)
-        self.assertEqual(self.user.email, self.updated_email)
-        self.assertEqual(self.user.created_at, DT)
-        self.assertEqual(self.user.updated_at, update_time)
 
     def test_decrement_user_when_delete_user(self):
         user_count = get_user_model().objects.count()
