@@ -25,10 +25,11 @@ class AuthorizedUserApiTest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-    def test_should_return_login_user(self):
+    def test_should_return_login_user_icon(self):
         res = self.client.get(LOGIN_USER_URL)
 
-        self.assertEqual(res.data['username'], self.user.username)
+        self.assertEqual(list(res.data.keys()), ['icon'])
+        self.assertEqual(res.data['icon'], 'http://testserver/media/icons/default.png')
 
     def test_should_partial_update_user(self):
         payload = {'username': 'update_username', 'email': 'update_username@sample.com', 'password': 'dummy_pw'}
@@ -184,7 +185,7 @@ class UnAuthorizedUserApiTest(TestCase):
     def test_should_create_new_user(self):
         payload = {'username': 'dummy', 'email': 'dummy@sample.com', 'password': 'dummy_pw'}
         res = self.client.post(CREATE_USER_URL, payload)
-        user = get_user_model().objects.get(**res.data)
+        user = get_user_model().objects.get(email=res.data['email'])
 
         self.assertEqual(get_user_model().objects.count(), 1)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -192,6 +193,7 @@ class UnAuthorizedUserApiTest(TestCase):
         self.assertEqual(user.email, payload['email'])
         self.assertTrue(user.check_password(payload['password']))
         self.assertNotIn('password', res.data)
+        self.assertEqual(str(user.icon), 'icons/default.png')
 
     def test_should_not_create_user_by_some_credential(self):
         payload = {'username': 'dummy', 'email': 'dummy@sample.com', 'password': 'dummy_pw'}

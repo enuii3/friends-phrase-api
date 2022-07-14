@@ -28,6 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     username = models.CharField(max_length=20)
     email = models.EmailField(max_length=100, unique=True)
+    icon = models.ImageField(upload_to='icons', verbose_name='アイコン', default='icons/default.png')
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
