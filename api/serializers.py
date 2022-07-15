@@ -1,29 +1,14 @@
 from rest_framework import serializers
-
 from .models import Profile, Phrase, Comment
 from django.contrib.auth import get_user_model
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = get_user_model()
-        fields = ['id', 'username', 'email', 'password']
-        extra_kwargs = {
-            'username': {'required': True},
-            'email': {'required': True},
-            'password': {'write_only': True, 'required': True, 'min_length': 8},
-        }
-
-    def create(self, validated_data):
-        return get_user_model().objects.create_user(**validated_data)
 
 
 class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ['username']
+        fields = ['icon']
         extra_kwargs = {
-            'username': {'required': True},
+            'icon': {'read_only': True}
         }
 
 
@@ -39,12 +24,23 @@ class ProfileSerializer(serializers.ModelSerializer):
         }
 
 
+class PostUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'icon']
+
+    extra_kwargs = {
+        'username': {'read_only': True},
+        'icon': {'read_only': True},
+    }
+
+
 class PhraseSerializer(serializers.ModelSerializer):
     LANGUAGE_CHOICES = (
         ('en', 'English'),
         ('jp', 'Japanese'),
     )
-    username = serializers.ReadOnlyField(source='user.username')
+    user = PostUserSerializer(read_only=True)
     text_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
     translated_word_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
 
@@ -57,7 +53,7 @@ class PhraseSerializer(serializers.ModelSerializer):
                   'translated_word_language',
                   'created_at',
                   'updated_at',
-                  'username',
+                  'user',
                   'comments',
                   ]
 
@@ -70,12 +66,28 @@ class PhraseSerializer(serializers.ModelSerializer):
         }
 
 
+class UserSerializer(serializers.ModelSerializer):
+    phrases = PhraseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'email', 'password', 'icon', 'phrases']
+        extra_kwargs = {
+            'username': {'required': True},
+            'email': {'required': True},
+            'password': {'write_only': True, 'required': True, 'min_length': 8},
+        }
+
+    def create(self, validated_data):
+        return get_user_model().objects.create_user(**validated_data)
+
+
 class CommentSerializer(serializers.ModelSerializer):
     LANGUAGE_CHOICES = (
         ('en', 'English'),
         ('jp', 'Japanese'),
     )
-    username = serializers.ReadOnlyField(source='user.username')
+    user = PostUserSerializer(read_only=True)
     text_language = serializers.ChoiceField(choices=LANGUAGE_CHOICES)
     phrase = serializers.PrimaryKeyRelatedField(
         many=False,
@@ -84,7 +96,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'text', 'text_language', 'created_at', 'updated_at', 'username', 'phrase']
+        fields = ['id', 'text', 'text_language', 'created_at', 'updated_at', 'user', 'phrase']
         extra_kwargs = {
             'text': {'required': True},
             'text_language': {'required': True},
