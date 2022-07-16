@@ -28,7 +28,7 @@ class AuthorizedUserApiTest(TestCase):
     def test_should_return_login_user_icon(self):
         res = self.client.get(LOGIN_USER_URL)
 
-        self.assertEqual(list(res.data.keys()), ['icon'])
+        self.assertEqual(list(res.data.keys()), ['username', 'icon'])
         self.assertEqual(res.data['icon'], 'http://testserver/media/icons/default.png')
 
     def test_should_partial_update_user(self):
