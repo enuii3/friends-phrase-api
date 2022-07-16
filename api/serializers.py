@@ -6,8 +6,9 @@ from django.contrib.auth import get_user_model
 class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ['icon']
+        fields = ['username', 'icon']
         extra_kwargs = {
+            'username': {'read_only': True},
             'icon': {'read_only': True}
         }
 
