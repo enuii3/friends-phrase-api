@@ -29,7 +29,7 @@ class AuthorizedUserApiTest(TestCase):
         res = self.client.get(LOGIN_USER_URL)
 
         self.assertEqual(list(res.data.keys()), ['username', 'icon'])
-        self.assertEqual(res.data['icon'], 'http://testserver/media/icons/default.png')
+        self.assertEqual(res.data['icon'], 'https://friends-phrase-backet.s3.amazonaws.com/static/icons/default.png')
 
     def test_should_partial_update_user(self):
         payload = {'username': 'update_username', 'email': 'update_username@sample.com', 'password': 'dummy_pw'}
