@@ -60,9 +60,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'friends_phrase.urls'
 
-CORS_ORIGIN_WHITELIST = [
-    "http://localhost:3000"
-]
+CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST')
+#     [
+#     "http://localhost:3000"
+# ]
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
