@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0004_auto_20220705_0205'),
     ]
@@ -13,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='icon',
-            field=models.ImageField(default='icon/default.png', upload_to='images', verbose_name='アイコン'),
+            field=models.ImageField(default='icons/default.png', upload_to='icons', verbose_name='アイコン'),
         ),
     ]
